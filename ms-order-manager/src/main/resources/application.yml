@@ -1,0 +1,59 @@
+server:
+  port: 8801
+management:
+  health:
+    diskspace:
+      enabled: false
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: prometheus, health
+      base-path: '/'
+      path-mapping:
+        prometheus: 'metrics'
+spring:
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:29092
+          autoCreateTopics: false
+        deserializationExceptionHandler: logAndFail
+        bindings:
+          receive-chatbot-whatsapp-message-input:
+            consumer:
+              startOffset: latest
+              enableDlq: false
+              configuration:
+                max.poll.records: 10
+                max.poll.interval.ms: 20000
+      bindings:
+        receive-chatbot-whatsapp-message-input:
+          destination: receive-chatbot_whatsapp-message
+          content-type: application/json
+          group: card-pre-consumer
+          consumer:
+            maxAttempts: 5
+            concurrency: 5
+        send-chatbot-whatsapp-message-output:
+          destination: send-chatbot_whatsapp-message
+          contentType: application/json
+          producer:
+            configuration:
+              partitionCount: 1
+  jpa:
+    generate-ddl: true
+    show-sql: true
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3312/mysnack
+    username: root
+    password: root
